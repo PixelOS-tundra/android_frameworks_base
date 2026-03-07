@@ -53,7 +53,6 @@ import android.os.PowerManager;
 import android.os.Trace;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -971,19 +970,10 @@ public class UdfpsController implements DozeReceiver, Dumpable {
                     true /* isAod */);
         };
 
-        if (isScreenOffUnlockEnabled() || mScreenOn) {
+        if (mScreenOn) {
             mAodInterruptRunnable.run();
             mAodInterruptRunnable = null;
         }
-    }
-
-    private boolean isScreenOffUnlockEnabled() {
-        return mContext.getResources().getBoolean(R.bool.config_screen_off_udfps_enabled)
-                && Settings.Secure.getIntForUser(
-                        mContext.getContentResolver(),
-                        Settings.Secure.SCREEN_OFF_UNLOCK_UDFPS_ENABLED,
-                        0,
-                        mContext.getUserId()) != 0;
     }
 
     /**
