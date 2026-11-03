@@ -43,6 +43,8 @@ public class OverScroller {
 
     private final boolean mFlywheel;
 
+    private final boolean mFlingBoost;
+
     private static final int DEFAULT_DURATION = 250;
     private static final int SCROLL_MODE = 0;
     private static final int FLING_MODE = 1;
@@ -83,6 +85,7 @@ public class OverScroller {
         mFlywheel = flywheel;
         mScrollerX = new SplineOverScroller(context);
         mScrollerY = new SplineOverScroller(context);
+        mFlingBoost = FlingBoost.isEnabled(context);
     }
 
     /**
@@ -439,8 +442,10 @@ public class OverScroller {
         mScrollerX.fling(startX, velocityX, minX, maxX, overX);
         mScrollerY.fling(startY, velocityY, minY, maxY, overY);
 
-        FlingBoost.onFlingStart(Math.max(mScrollerX.mDuration, mScrollerY.mDuration),
-                Math.abs(velocityY) >= Math.abs(velocityX));
+        if (mFlingBoost) {
+            FlingBoost.onFlingStart(Math.max(mScrollerX.mDuration, mScrollerY.mDuration),
+                    Math.abs(velocityY) >= Math.abs(velocityX));
+        }
     }
 
     /**
@@ -505,7 +510,7 @@ public class OverScroller {
      * @see #forceFinished(boolean)
      */
     public void abortAnimation() {
-        if (mMode == FLING_MODE && !isFinished()) {
+        if (mFlingBoost && mMode == FLING_MODE && !isFinished()) {
             FlingBoost.onFlingEnd();
         }
         mScrollerX.finish();

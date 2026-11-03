@@ -6,6 +6,8 @@
 
 package android.widget;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
@@ -13,9 +15,10 @@ import android.os.ServiceManager;
 import android.os.SystemClock;
 
 /**
- * Tells the device's fling boost service, if there is one, that an
- * {@link OverScroller} fling started or ended. The service decides whether
- * and how to boost; this side only reports the fling and its duration.
+ * Tells the device's fling boost service that an {@link OverScroller} fling
+ * started or ended. The service decides whether and how to boost; this side
+ * only reports the fling and its duration. Devices opt in with
+ * config_flingBoost; on the others OverScroller never calls in here.
  *
  * Calls are oneway and cheap. The service lookup is cached, and retried with
  * a growing delay while the service is missing.
@@ -40,7 +43,27 @@ final class FlingBoost {
     private static long sRetryDelay = RETRY_MIN_MS;
     private static long sBoostEnd;
 
+    // 0: not read yet, 1: enabled, -1: disabled
+    private static volatile int sEnabled;
+
     private FlingBoost() {}
+
+    /** Reads config_flingBoost once per process; the context includes device overlays. */
+    static boolean isEnabled(Context context) {
+        int enabled = sEnabled;
+        if (enabled == 0) {
+            boolean value = false;
+            try {
+                value = context != null && context.getResources().getBoolean(
+                        com.android.internal.R.bool.config_flingBoost);
+            } catch (Resources.NotFoundException e) {
+                // Leave it off.
+            }
+            enabled = value ? 1 : -1;
+            sEnabled = enabled;
+        }
+        return enabled > 0;
+    }
 
     static void onFlingStart(int durationMs, boolean vertical) {
         if (durationMs <= 0) return;
